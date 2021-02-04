@@ -1,5 +1,3 @@
-/** by Ali Mahzoun **/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -81,12 +79,14 @@ int if_correct_par(char* inp){
     while(*(inp+i) != '\n'){
         ch = *(inp+i);
         i++;
-        if(par < 0)
-            return 0;
         if(ch == '(')
             par++;
         else if(ch == ')')
+        {
             par--;
+            if(par < 0)
+            return 0;
+        }
     }
     if(par > 0)
         return 0;
