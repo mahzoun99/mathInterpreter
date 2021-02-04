@@ -1,10 +1,10 @@
 /** by Ali Mahzoun **/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+
 
 /**     Data Structure     **/
 struct node{
@@ -13,6 +13,7 @@ struct node{
 };
 struct node *head;
 int len_list = 0;
+
 void push(int data) {
     struct node *link = (struct node*) malloc(sizeof(struct node));
     link->data = data;
@@ -20,12 +21,14 @@ void push(int data) {
     head = link;
     len_list++;
 }
+
 struct node* pop() {
     struct node *tempLink = head;
     head = head->next;
     len_list--;
     return tempLink;
 }
+
 void print_list() {
     struct node *ptr = head;
     printf("[ ");
@@ -35,6 +38,7 @@ void print_list() {
     }
     printf("] (len: %d)\n", len_list);
 }
+
 
 /**     start interpreter    **/
 void run_interpreter();
@@ -47,7 +51,7 @@ int main(){
 }
 
 
-/**     input validation     **/
+/**     lexical and syntax check     **/
 int if_chars_valid(char* inp){
     int i = 0;
     char ch;
@@ -61,6 +65,7 @@ int if_chars_valid(char* inp){
     }
     return 1;
 }
+
 void remove_spaces(char* s) {
     const char* d = s;
     do {
@@ -69,6 +74,25 @@ void remove_spaces(char* s) {
         }
     } while (*s++ = *d++);
 }
+
+int if_correct_par(char* inp){
+    int par = 0, i = 0;
+    char ch;
+    while(*(inp+i) != '\n'){
+        ch = *(inp+i);
+        i++;
+        if(par < 0)
+            return 0;
+        if(ch == '(')
+            par++;
+        else if(ch == ')')
+            par--;
+    }
+    if(par > 0)
+        return 0;
+    return 1;
+}
+
 void start_calculate(char*);
 void run_interpreter(){
     char inp[120];
@@ -79,34 +103,38 @@ void run_interpreter(){
             exit(0);
         else if(strcmp(inp, "print()\n") == 0)
             print_list();
+        else if(!if_correct_par(inp))
+            printf("Wrong pair of parentheses! Try again.\n");
         else if(!if_chars_valid(inp))
             printf("Invalid Characters! Try again.\n");
         else
             remove_spaces(inp), start_calculate(inp);
-
     }
 }
 
 
-/**     all evaluations     **/
-void calc_exp_p();
+/**     semantic check     **/
+int calc_exp_p();
 void calc_exp();
 void start_calculate(char* inp){
-    int i = 0;
-    int alamat = 1;
+    int i = 0, alamat = 1;
     char ch;
+
     while(*(inp+i) != '\n'){
         ch = *(inp+i);
+
         if(ch == '+' || ch == '*' || ch == '/'
             || ch == '%'|| ch == '^' || ch == '('){
             push(ch);
             i++;
         }
+
         else if(ch == '-'){
             push('+');
             i++;
             alamat = -1;
         }
+
         else if(isdigit(ch)){
             char temp[120] = "";
             int j = 0;
@@ -120,12 +148,21 @@ void start_calculate(char* inp){
             push((int)(f * alamat));   /*   Just integers for now!   */
             alamat = 1;
         }
+
         else if(ch == ')'){
-            calc_exp_p();
+            int t = calc_exp_p();
+            if(t) {
+                printf("Empty parentheses found! Try again!\n");
+                head = NULL;
+                len_list = 0;
+                return;
+            }
             i++;
         }
     }
+
     calc_exp();
+
     printf("%d\n", pop()->data);
 }
 
@@ -140,9 +177,13 @@ int power(int x, unsigned int y)
     else
         return x*power(x, y/2)*power(x, y/2);
 }
-void calc_pow_p(){   //list is global
+int calc_pow_p(){   //list is global
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
+    if(head->data == (int)'('){   //empty parentheses
+        pop();
+        return 1;
+    }
     while(ptr->data != (int)'(') {
         if(ptr->data == (int)'^'){
             prev_ptr->data = power(ptr->next->data, prev_ptr->data);
@@ -153,10 +194,16 @@ void calc_pow_p(){   //list is global
         else
             prev_ptr = ptr, ptr = ptr->next;
     }
+    return 0;
 }
-void calc_mdr_p(){   // * / %
+
+int calc_mdr_p(){   // * / %
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
+    if(head->data == (int)'('){   //empty parentheses
+        pop();
+        return 1;
+    }
     while(ptr->data != (int)'(') {
         if(ptr->data == (int)'*'){
             prev_ptr->data = (ptr->next->data * prev_ptr->data);
@@ -179,10 +226,16 @@ void calc_mdr_p(){   // * / %
         else
             prev_ptr = ptr, ptr = ptr->next;
     }
+    return 0;
 }
-void calc_pm_p(){   // + -
+
+int calc_pm_p(){   // + -
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
+    if(head->data == (int)'('){   //empty parentheses
+        pop();
+        return 1;
+    }
     while(ptr->data != (int)'(') {
         if(ptr->data == (int)'+'){
             prev_ptr->data = (ptr->next->data + prev_ptr->data);
@@ -193,14 +246,29 @@ void calc_pm_p(){   // + -
         else
             prev_ptr = ptr, ptr = ptr->next;
     }
+    return 0;
 }
-void calc_exp_p(){
-    calc_pow_p();
-    calc_mdr_p();
-    calc_pm_p();
+
+int calc_exp_p(){
+
+    int isEmptyPar = 0;
+
+    isEmptyPar = calc_pow_p();
+    if(isEmptyPar)
+        return 1;
+
+    isEmptyPar = calc_mdr_p();
+    if(isEmptyPar)
+        return 1;
+
+    isEmptyPar = calc_pm_p();
+    if(isEmptyPar)
+        return 1;
+
     int temp = pop()->data;
     pop();
     push(temp);
+    return 0;
 }
 
 
@@ -219,6 +287,7 @@ void calc_pow(){   //list is global
             prev_ptr = ptr, ptr = ptr->next;
     }
 }
+
 void calc_mdr(){   // * / %
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
@@ -245,6 +314,7 @@ void calc_mdr(){   // * / %
             prev_ptr = ptr, ptr = ptr->next;
     }
 }
+
 void calc_pm(){   // + -
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
@@ -259,7 +329,11 @@ void calc_pm(){   // + -
             prev_ptr = ptr, ptr = ptr->next;
     }
 }
+
 void calc_exp(){
+    if(len_list < 2) {
+        return;
+    }
     calc_pow();
     calc_mdr();
     calc_pm();
