@@ -1,44 +1,43 @@
+/** by Ali Mahzoun **/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include <time.h>
-void delay(int number_of_seconds)
-{
-    // Converting time into milli_seconds
-    int milli_seconds = 1000 * number_of_seconds;
 
-    // Storing start time
-    clock_t start_time = clock();
-
-    // looping till required time is not achieved
-    while (clock() < start_time + milli_seconds)
-        ;
-}
-
-
+/**     Data Structure     **/
 struct node{
     int data;
     struct node *next;
 };
-struct node *head = NULL;
-struct node *current = NULL;
+struct node *head;
+int len_list = 0;
 void push(int data) {
     struct node *link = (struct node*) malloc(sizeof(struct node));
     link->data = data;
     link->next = head;
     head = link;
+    len_list++;
 }
 struct node* pop() {
     struct node *tempLink = head;
     head = head->next;
+    len_list--;
     return tempLink;
 }
+void print_list() {
+    struct node *ptr = head;
+    printf("[ ");
+    while(ptr != NULL) {
+        printf("%d ",ptr->data);
+        ptr = ptr->next;
+    }
+    printf("] (len: %d)\n", len_list);
+}
 
-
+/**     start interpreter    **/
 void run_interpreter();
-
-
 int main(){
     printf("    Welcome to my simple mathematical interpreter!\n");
     printf("    Valid characters are: + - * / %% ^ ()\n");
@@ -47,7 +46,8 @@ int main(){
     return 0;
 }
 
-/*         input validation         */
+
+/**     input validation     **/
 int if_chars_valid(char* inp){
     int i = 0;
     char ch;
@@ -77,6 +77,8 @@ void run_interpreter(){
         fgets(inp, 256, stdin);
         if(strcmp(inp, "exit()\n") == 0)
             exit(0);
+        else if(strcmp(inp, "print()\n") == 0)
+            print_list();
         else if(!if_chars_valid(inp))
             printf("Invalid Characters! Try again.\n");
         else
@@ -85,17 +87,26 @@ void run_interpreter(){
     }
 }
 
-void calc_exp();
-void calc_pow();
 
+/**     all evaluations     **/
+void calc_exp_p();
+void calc_exp();
 void start_calculate(char* inp){
     int i = 0;
+    int alamat = 1;
     char ch;
     while(*(inp+i) != '\n'){
         ch = *(inp+i);
-        if(ch == '+' || ch == '-' || ch == '*' || ch == '/'
-            || ch == '%'|| ch == '^' || ch == '(')
-            push(ch), i++;
+        if(ch == '+' || ch == '*' || ch == '/'
+            || ch == '%'|| ch == '^' || ch == '('){
+            push(ch);
+            i++;
+        }
+        else if(ch == '-'){
+            push('+');
+            i++;
+            alamat = -1;
+        }
         else if(isdigit(ch)){
             char temp[120] = "";
             int j = 0;
@@ -106,17 +117,20 @@ void start_calculate(char* inp){
                 ch = *(inp+i);
             }
             double f = atof(temp);
-            push((int)f);   /*   Just integers for now!   */
+            push((int)(f * alamat));   /*   Just integers for now!   */
+            alamat = 1;
         }
         else if(ch == ')'){
-            calc_exp();
+            calc_exp_p();
             i++;
         }
     }
     calc_exp();
-    printf("%d\n", head->data);
+    printf("%d\n", pop()->data);
 }
 
+
+/**     calculate inside of parentheses     **/
 int power(int x, unsigned int y)
 {
     if (y == 0)
@@ -126,15 +140,80 @@ int power(int x, unsigned int y)
     else
         return x*power(x, y/2)*power(x, y/2);
 }
-void calc_pow(){   //list is global
+void calc_pow_p(){   //list is global
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
-
-    while(ptr->data != (int)'(' && ptr != NULL) {
+    while(ptr->data != (int)'(') {
         if(ptr->data == (int)'^'){
             prev_ptr->data = power(ptr->next->data, prev_ptr->data);
             prev_ptr->next = ptr->next->next;
             ptr = prev_ptr->next;
+            len_list -= 2;
+        }
+        else
+            prev_ptr = ptr, ptr = ptr->next;
+    }
+}
+void calc_mdr_p(){   // * / %
+    struct node *ptr = head->next;
+    struct node *prev_ptr = head;
+    while(ptr->data != (int)'(') {
+        if(ptr->data == (int)'*'){
+            prev_ptr->data = (ptr->next->data * prev_ptr->data);
+            prev_ptr->next = ptr->next->next;
+            ptr = prev_ptr->next;
+            len_list -= 2;
+        }
+        else if(ptr->data == (int)'/'){
+            prev_ptr->data = (ptr->next->data / prev_ptr->data);
+            prev_ptr->next = ptr->next->next;
+            ptr = prev_ptr->next;
+            len_list -= 2;
+        }
+        else if(ptr->data == (int)'%'){
+            prev_ptr->data = (ptr->next->data % prev_ptr->data);
+            prev_ptr->next = ptr->next->next;
+            ptr = prev_ptr->next;
+            len_list -= 2;
+        }
+        else
+            prev_ptr = ptr, ptr = ptr->next;
+    }
+}
+void calc_pm_p(){   // + -
+    struct node *ptr = head->next;
+    struct node *prev_ptr = head;
+    while(ptr->data != (int)'(') {
+        if(ptr->data == (int)'+'){
+            prev_ptr->data = (ptr->next->data + prev_ptr->data);
+            prev_ptr->next = ptr->next->next;
+            ptr = prev_ptr->next;
+            len_list -= 2;
+        }
+        else
+            prev_ptr = ptr, ptr = ptr->next;
+    }
+}
+void calc_exp_p(){
+    calc_pow_p();
+    calc_mdr_p();
+    calc_pm_p();
+    int temp = pop()->data;
+    pop();
+    push(temp);
+}
+
+
+/**     calculate last expresion without any parentheses     **/
+void calc_pow(){   //list is global
+    struct node *ptr = head->next;
+    struct node *prev_ptr = head;
+    while(len_list > 1 && ptr != NULL) {
+        if(ptr->data == (int)'^'){
+            prev_ptr->data = power(ptr->next->data, prev_ptr->data);
+            prev_ptr->next = ptr->next->next;
+            ptr = prev_ptr->next;
+            len_list -= 2;
         }
         else
             prev_ptr = ptr, ptr = ptr->next;
@@ -143,22 +222,24 @@ void calc_pow(){   //list is global
 void calc_mdr(){   // * / %
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
-
-    while(ptr->data != (int)'(' && ptr != NULL) {
+    while(len_list > 1 && ptr != NULL) {
         if(ptr->data == (int)'*'){
             prev_ptr->data = (ptr->next->data * prev_ptr->data);
             prev_ptr->next = ptr->next->next;
             ptr = prev_ptr->next;
+            len_list -= 2;
         }
         else if(ptr->data == (int)'/'){
             prev_ptr->data = (ptr->next->data / prev_ptr->data);
             prev_ptr->next = ptr->next->next;
             ptr = prev_ptr->next;
+            len_list -= 2;
         }
         else if(ptr->data == (int)'%'){
             prev_ptr->data = (ptr->next->data % prev_ptr->data);
             prev_ptr->next = ptr->next->next;
             ptr = prev_ptr->next;
+            len_list -= 2;
         }
         else
             prev_ptr = ptr, ptr = ptr->next;
@@ -167,17 +248,12 @@ void calc_mdr(){   // * / %
 void calc_pm(){   // + -
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
-
-    while(ptr->data != (int)'(' && ptr != NULL) {
+    while(len_list > 1 && ptr != NULL) {
         if(ptr->data == (int)'+'){
             prev_ptr->data = (ptr->next->data + prev_ptr->data);
             prev_ptr->next = ptr->next->next;
             ptr = prev_ptr->next;
-        }
-        else if(ptr->data == (int)'-'){
-            prev_ptr->data = (ptr->next->data - prev_ptr->data);
-            prev_ptr->next = ptr->next->next;
-            ptr = prev_ptr->next;
+            len_list -= 2;
         }
         else
             prev_ptr = ptr, ptr = ptr->next;
