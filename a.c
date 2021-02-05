@@ -170,7 +170,7 @@ void start_calculate(char* inp){
         pop();
         len_list = 0;
         head = NULL;
-        printf("Wrong expression. Try aagain\n");
+        printf("Wrong expression. Try again\n");
     }
     else
         printf("%d\n", pop()->data);}
