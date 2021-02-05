@@ -1,4 +1,5 @@
-/**     by Ali Mahzoun     **/
+/**                by Ali Mahzoun                **/
+/**     mathematical expressions interpreter     **/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ void print_list() {
 }
 
 
-/**     start interpreter    **/
+/**     main - start interpreter    **/
 void run_interpreter();
 int main(){
     printf("    Welcome to my simple mathematical interpreter!\n");
@@ -72,7 +73,7 @@ void remove_spaces(char* s) {
         while (*d == ' ') {
             ++d;
         }
-    } while (*s++ = *d++);
+    } while ((*s++ = *d++));
 }
 
 int if_correct_par(char* inp){
@@ -87,7 +88,7 @@ int if_correct_par(char* inp){
         {
             par--;
             if(par < 0)
-            return 0;
+                return 0;
         }
     }
     if(par > 0)
@@ -105,6 +106,8 @@ void run_interpreter(){
             exit(0);
         else if(strcmp(inp, "print()\n") == 0)
             print_list();
+        else if(strcmp(inp, "\n") == 0)
+            printf("Empty input! Try again.\n");
         else if(!if_correct_par(inp))
             printf("Wrong pair of parentheses! Try again.\n");
         else if(!if_chars_valid(inp))
@@ -115,7 +118,7 @@ void run_interpreter(){
 }
 
 
-/**     semantic check     **/
+/**     semantic check and output     **/
 int calc_exp_p();
 void calc_exp();
 void start_calculate(char* inp){
@@ -173,7 +176,8 @@ void start_calculate(char* inp){
         printf("Wrong expression. Try again\n");
     }
     else
-        printf("%d\n", pop()->data);}
+        printf("%d\n", pop()->data);
+}
 
 
 /**     calculate inside of parentheses     **/
@@ -205,7 +209,6 @@ int calc_pow_p(){   //list is global
     }
     return 0;
 }
-
 int calc_mdr_p(){   // * / %
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
@@ -237,7 +240,6 @@ int calc_mdr_p(){   // * / %
     }
     return 0;
 }
-
 int calc_pm_p(){   // + -
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
@@ -260,7 +262,7 @@ int calc_pm_p(){   // + -
 
 int calc_exp_p(){
 
-    int isEmptyPar = 0;
+    int isEmptyPar;
 
     isEmptyPar = calc_pow_p();
     if(isEmptyPar)
@@ -296,7 +298,6 @@ void calc_pow(){   //list is global
             prev_ptr = ptr, ptr = ptr->next;
     }
 }
-
 void calc_mdr(){   // * / %
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
@@ -323,7 +324,6 @@ void calc_mdr(){   // * / %
             prev_ptr = ptr, ptr = ptr->next;
     }
 }
-
 void calc_pm(){   // + -
     struct node *ptr = head->next;
     struct node *prev_ptr = head;
