@@ -165,8 +165,15 @@ void start_calculate(char* inp){
 
     calc_exp();
 
-    printf("%d\n", pop()->data);
-}
+    if(head->data == (int)'+' || head->data == (int)'-' || head->data == (int)'*' || head->data == (int)'/'
+        || head->data == (int)'%' || head->data == (int)'^') {
+        pop();
+        len_list = 0;
+        head = NULL;
+        printf("Wrong expression. Try aagain\n");
+    }
+    else
+        printf("%d\n", pop()->data);}
 
 
 /**     calculate inside of parentheses     **/
