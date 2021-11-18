@@ -6,6 +6,3 @@ valid operations are + - * / % ^
 as instructor asked, the project is in a single c file.
 
 still debugging...
-  - multiple continuous operators
-  - negative number
-  - just for integers (integer output)
